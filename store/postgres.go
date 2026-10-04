@@ -59,6 +59,6 @@ func (s *PostgresStore) GetAll(ctx context.Context) ([]models.Human, error) {
 	return result, rows.Err()
 }
 
-func (s *PostgresStore) Close() {
-	s.db.Close()
+func (s *PostgresStore) Close() error {
+	return s.db.Close()
 }

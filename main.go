@@ -1,6 +1,7 @@
 package main
 
 import (
+	"assisko/store"
 	"context"
 	"log"
 	"os"
@@ -18,5 +19,7 @@ func main() {
 		log.Fatalf("Не удалось подключиться к базе данных: %v", err)
 	}
 	defer st.Close()
+
+	svc := services.NewService(st)
 
 }
