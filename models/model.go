@@ -11,7 +11,7 @@ type Human struct {
 }
 type SimpleEmployment struct {
 	Years     int `json:"years"`
-	Month     int `json:"month"`
+	Months    int `json:"months"`
 	Days      int `json:"days"`
 	TotalDays int `json:"totaldays"`
 }
