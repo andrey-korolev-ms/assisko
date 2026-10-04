@@ -32,6 +32,15 @@ func (s *PostgresStore) SimpleSaveAtDB(ctx context.Context, human models.Human) 
 	return err
 }
 
+func (s *PostgresStore) GetByID(ctx context.Context, id int) (models.Human, error) {
+	var data models.Human
+	err := s.db.QueryRowContext(ctx, "").Scan(&data.Sex, &data.Age, &data.IPK, &data.IsInvalid, &data.InvalidGroup, &data.OperatorID)
+	if err != nil {
+		return models.Human{}, err
+	}
+	return data, nil
+}
+
 func (s *PostgresStore) Close() {
 	s.db.Close()
 }
