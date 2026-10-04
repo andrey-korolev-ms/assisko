@@ -34,11 +34,29 @@ func (s *PostgresStore) SimpleSaveAtDB(ctx context.Context, human models.Human) 
 
 func (s *PostgresStore) GetByID(ctx context.Context, id int) (models.Human, error) {
 	var data models.Human
-	err := s.db.QueryRowContext(ctx, "").Scan(&data.Sex, &data.Age, &data.IPK, &data.IsInvalid, &data.InvalidGroup, &data.OperatorID)
+	err := s.db.QueryRowContext(ctx, "SELECT sex, age, ipk, simpleemployment, isinvalid, invalidgroup, operatorid FROM assisko WHERE id = $1", id).Scan(&data.Sex, &data.Age, &data.IPK, &data.SimpleEmployment, &data.IsInvalid, &data.InvalidGroup, &data.OperatorID)
 	if err != nil {
 		return models.Human{}, err
 	}
 	return data, nil
+}
+
+func (s *PostgresStore) GetAll(ctx context.Context) ([]models.Human, error) {
+
+	rows, err := s.db.QueryContext(ctx, "SELECT sex, age, ipk, simpleemployment, isinvalid, invalidgroup, operatorid FROM assisko")
+	if err != nil {
+		return nil, err
+	}
+
+	var result []models.Human
+	for rows.Next() {
+		var data models.Human
+		if err := rows.Scan(&data.Sex, &data.Age, &data.IPK, &data.SimpleEmployment, &data.IsInvalid, &data.InvalidGroup, &data.OperatorID); err != nil {
+			return nil, err
+		}
+		result = append(result, data)
+	}
+	return result, rows.Err()
 }
 
 func (s *PostgresStore) Close() {
