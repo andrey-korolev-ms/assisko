@@ -4,6 +4,8 @@ import (
 	"assisko/models"
 	"context"
 	"database/sql"
+
+	_ "github.com/lib/pq"
 )
 
 type Storage interface {
