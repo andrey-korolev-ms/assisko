@@ -29,7 +29,7 @@ func NewPostgresStore(ctx context.Context, conn string) (*PostgresStore, error) 
 }
 
 func (s *PostgresStore) SimpleSaveAtDB(ctx context.Context, human models.Human) error {
-	_, err := s.db.ExecContext(ctx, "INSERT INTO human (sex, age, ipk, simpleemployment, isinvalid, invalidgroup, operatorid) values ($1, $2, $3, $4, $5, $6, $7)", human.Sex, human.Age, human.IPK, human.SimpleEmployment, human.IsInvalid, human.InvalidGroup, human.OperatorID)
+	_, err := s.db.ExecContext(ctx, "INSERT INTO assisko (sex, age, ipk, simpleemployment, isinvalid, invalidgroup, operatorid) values ($1, $2, $3, $4, $5, $6, $7)", human.Sex, human.Age, human.IPK, human.SimpleEmployment, human.IsInvalid, human.InvalidGroup, human.OperatorID)
 
 	return err
 }
