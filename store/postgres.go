@@ -4,14 +4,19 @@ import (
 	"assisko/models"
 	"context"
 	"database/sql"
+	"errors"
 
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Storage interface {
 	SimpleSaveAtDB(ctx context.Context, human models.Human) error
 	GetByID(ctx context.Context, id int) (models.Human, error)
 	GetAll(ctx context.Context) ([]models.Human, error)
+	// методы для пользователей
+	CreateUser(ctx context.Context, username, password string) error
+	GetUserByUsername(ctx context.Context, username string) (models.User, error)
 }
 type PostgresStore struct {
 	db *sql.DB
@@ -63,4 +68,21 @@ func (s *PostgresStore) GetAll(ctx context.Context) ([]models.Human, error) {
 
 func (s *PostgresStore) Close() error {
 	return s.db.Close()
+}
+
+func (s *PostgresStore) CreateUser(ctx context.Context, username, password string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx, "INSERT INTO users (username, password_hash) values ($1, $2)", username, hashedPassword)
+	return err
+}
+func (s *PostgresStore) GetUserByUsername(ctx context.Context, username string) (models.User, error) {
+	var user models.User
+	err := s.db.QueryRowContext(ctx, "SELECT id, username, password_hash from users where username = $1", username).Scan(&user.ID, &user.Username, &user.PasswordHash)
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.User{}, errors.New("пользователь не найден")
+	}
+	return user, err
 }
