@@ -66,10 +66,6 @@ func (s *PostgresStore) GetAll(ctx context.Context) ([]models.Human, error) {
 	return result, rows.Err()
 }
 
-func (s *PostgresStore) Close() error {
-	return s.db.Close()
-}
-
 func (s *PostgresStore) CreateUser(ctx context.Context, username, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -85,4 +81,8 @@ func (s *PostgresStore) GetUserByUsername(ctx context.Context, username string) 
 		return models.User{}, errors.New("пользователь не найден")
 	}
 	return user, err
+}
+
+func (s *PostgresStore) Close() error {
+	return s.db.Close()
 }

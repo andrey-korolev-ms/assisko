@@ -7,8 +7,10 @@ require (
 	github.com/alexedwards/scs/v2 v2.9.0
 )
 
+require github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
+
 require (
 	github.com/gomodule/redigo v1.8.0 // indirect
 	github.com/lib/pq v1.12.3
-	golang.org/x/crypto v0.57.0
+	golang.org/x/crypto v0.58.0
 )
