@@ -10,12 +10,17 @@ import (
 )
 
 type Handler struct {
-	service *services.Service
-	session *scs.SessionManager
+	service   *services.Service
+	session   *scs.SessionManager
+	jwtSecret []byte //секрет будет здесь
 }
 
-func NewHandler(svc *services.Service, session *scs.SessionManager) *Handler {
-	return &Handler{service: svc, session: session}
+func NewHandler(svc *services.Service, session *scs.SessionManager, secret string) *Handler {
+	return &Handler{
+		service:   svc,
+		session:   session,
+		jwtSecret: []byte(secret),
+	}
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {

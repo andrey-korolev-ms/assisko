@@ -10,12 +10,21 @@ import (
 	"os"
 	"time"
 
+	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv"
+
 	"github.com/alexedwards/scs/redisstore"
 	"github.com/alexedwards/scs/v2"
 	"github.com/gomodule/redigo/redis"
 )
 
 func main() {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("ошибка .env")
+	}
+
 	conn := os.Getenv("DATABASE_URL")
 
 	initCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
