@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"assisko/models"
 	"assisko/services"
 	"encoding/json"
 	"net/http"
@@ -23,6 +22,26 @@ func NewHandler(svc *services.Service, session *scs.SessionManager, secret strin
 	}
 }
 
+func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid bad request", http.StatusBadRequest)
+		return
+	}
+	if err := h.service.RegisterUser(ctx, req.Username, req.Password); err != nil {
+		http.Error(w, "faild to register user", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"status": "registered"})
+}
+
+/*
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	h.session.Put(r.Context(), "userName", "Andrey")
 
@@ -64,3 +83,4 @@ func (h *Handler) Router() http.Handler {
 	mux.HandleFunc("POST /data", h.SaveData)
 	return mux
 }
+*/
