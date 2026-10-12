@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -49,4 +50,35 @@ func (h *Handler) LiginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("ContentType", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
 
+}
+
+func (h *Handler) AuthMiddleWare(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Autorization")
+		if authHeader == "" {
+			http.Error(w, "autorizition header is missing", http.StatusUnauthorized)
+			return
+		}
+		const prefix = "Bearer "
+		if len(authHeader) <= len(prefix) || authHeader[:len(prefix)] != prefix {
+			http.Error(w, "invalid autorization format", http.StatusUnauthorized)
+			return
+		}
+		tokenString := authHeader[len(prefix):]
+
+		claims := &Claims{}
+
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrSignatureInvalid
+			}
+			return h.jwtSecret, nil //секрет берем из структуры
+		})
+		if err != nil || !token.Valid {
+			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+			return
+		}
+		ctx := context.WithValue(r.Context(), "userID", claims.UserID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
