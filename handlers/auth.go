@@ -54,9 +54,9 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) AuthMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Autorization")
+		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			http.Error(w, "autorizition header is missing", http.StatusUnauthorized)
+			http.Error(w, "autorization header is missing", http.StatusUnauthorized)
 			return
 		}
 		const prefix = "Bearer "
