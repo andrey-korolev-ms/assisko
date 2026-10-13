@@ -20,12 +20,13 @@ import (
 
 func main() {
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("ошибка .env")
+	if err := godotenv.Load(); err != nil {
+		log.Println("ошибка .env")
 	}
-
+	port := os.Getenv("PORT")
 	conn := os.Getenv("DATABASE_URL")
+	redisAddr := os.Getenv("REDIS_ADDR")
+	jwtSecret := os.Getenv("JWT_SECRET")
 
 	initCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -43,7 +44,7 @@ func main() {
 		MaxIdle:   10,
 		MaxActive: 100,
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", "localhost:6379")
+			c, err := redis.Dial("tcp", redisAddr)
 			if err != nil {
 				return nil, err
 			}
@@ -61,12 +62,12 @@ func main() {
 	session.Cookie.Secure = false
 	session.Cookie.SameSite = http.SameSiteLaxMode
 
-	h := handlers.NewHandler(svc, session)
+	h := handlers.NewHandler(svc, session, jwtSecret)
 	// здесь в middleware кладем роутер
 	handlerChain := session.LoadAndSave(h.Router())
 
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         port,
 		Handler:      handlerChain,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
