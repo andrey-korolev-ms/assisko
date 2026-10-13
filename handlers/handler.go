@@ -3,6 +3,7 @@ package handlers
 import (
 	"assisko/services"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/alexedwards/scs/v2"
@@ -39,6 +40,25 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"status": "registered"})
+}
+
+func (h *Handler) ProtectedDataHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("UserID")
+	w.Write(fmt.Appendf(nil, "Защищенные данные для пользователя %v\n", userID))
+}
+
+func (h *Handler) SessionDemoHandler(w http.ResponseWriter, r *http.Request) {
+	h.session.Put(r.Context(), "demoKey", "Hello from Redis!")
+	val := h.session.GetString(r.Context(), "demoKey")
+	w.Write([]byte(val))
+}
+
+func (h *Handler) Router() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /register", h.RegisterHandler)
+	mux.HandleFunc("POST /login", h.LoginHandler)
+	mux.HandleFunc("GET /session-demo", h.SessionDemoHandler)
+	return mux
 }
 
 /*
