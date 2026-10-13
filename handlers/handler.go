@@ -55,9 +55,13 @@ func (h *Handler) SessionDemoHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Router() http.Handler {
 	mux := http.NewServeMux()
+	// незащищенные маршруты
 	mux.HandleFunc("POST /register", h.RegisterHandler)
 	mux.HandleFunc("POST /login", h.LoginHandler)
 	mux.HandleFunc("GET /session-demo", h.SessionDemoHandler)
+	// защищенный маршрут
+	protected := h.AuthMiddleWare(http.HandlerFunc(h.ProtectedDataHandler))
+	mux.Handle("GET /protected-data", protected)
 	return mux
 }
 
