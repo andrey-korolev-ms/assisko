@@ -9,6 +9,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type contextKey string
+
+const userIDKey contextKey = "userID"
+
 type Claims struct {
 	UserID   int    `json:"userid"`
 	Username string `json:"username"`
@@ -78,7 +82,7 @@ func (h *Handler) AuthMiddleWare(next http.Handler) http.Handler {
 			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
 			return
 		}
-		ctx := context.WithValue(r.Context(), "userID", claims.UserID)
+		ctx := context.WithValue(r.Context(), userIDKey, claims.UserID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

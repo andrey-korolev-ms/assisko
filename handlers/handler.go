@@ -43,8 +43,13 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ProtectedDataHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("UserID")
-	w.Write(fmt.Appendf(nil, "Защищенные данные для пользователя %v\n", userID))
+	userID, ok := r.Context().Value(userIDKey).(int)
+	if !ok {
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, "Защищенные данные для пользователя ID: %d\n", userID)
 }
 
 func (h *Handler) SessionDemoHandler(w http.ResponseWriter, r *http.Request) {
