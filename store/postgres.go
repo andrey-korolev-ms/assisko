@@ -55,6 +55,7 @@ func (s *PostgresStore) GetAll(ctx context.Context) ([]models.Human, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var result []models.Human
 	for rows.Next() {
