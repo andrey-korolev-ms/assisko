@@ -22,6 +22,7 @@ func NewTaskQueue(pool *redis.Pool) *TaskQueue {
 	return &TaskQueue{pool: pool}
 }
 
+// кладем задачу в Redis
 func (q *TaskQueue) Enqueue(task Task) error {
 
 	conn := q.pool.Get()
@@ -36,4 +37,28 @@ func (q *TaskQueue) Enqueue(task Task) error {
 		return fmt.Errorf("%w", err)
 	}
 	return nil
+}
+
+// удаляем задачу из Redis
+func (q *TaskQueue) Dequeue(timeout time.Duration) (*Task, error) {
+	conn := q.pool.Get()
+	defer conn.Close()
+
+	reply, err := redis.Values(conn.Do("BRPOP", "tasks:default", int(timeout.Seconds())))
+	if err == redis.ErrNil {
+		// таймаут, значит задач нет
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+	data, err := redis.Bytes(reply[1], nil)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+	var task Task
+	if err := json.Unmarshal(data, &task); err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+	return &task, nil
 }
