@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 )
@@ -32,5 +33,28 @@ func (w *Worker) Run(ctx context.Context) {
 		if task == nil {
 			continue
 		}
+		w.process(task)
 	}
+}
+func (w *Worker) process(task *Task) {
+	log.Printf("воркер выполняет задачу %v %v", task.ID, task.Type)
+	switch task.Type {
+	case "send_welcome_email":
+		w.handleWelcomeEmail(task)
+	default:
+		log.Printf("неизвестный тип задачи: %s", task.Type)
+	}
+}
+func (w *Worker) handleWelcomeEmail(task *Task) {
+	var payload struct {
+		UserID int64  `json:"userid"`
+		Email  string `json:"email"`
+	}
+	if err := json.Unmarshal(task.Payload, &payload); err != nil {
+		log.Printf("не удалось распарсить payload: %v ", err)
+		return
+	}
+	log.Printf("Отправка сообщения на %s (user_id=%d)", payload.Email, payload.UserID)
+	time.Sleep(500 * time.Millisecond)
+	log.Printf("Сообщение для пользователя %d отправлено", payload.UserID)
 }
