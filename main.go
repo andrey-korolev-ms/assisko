@@ -64,6 +64,19 @@ func main() {
 	session.Cookie.Secure = false
 	session.Cookie.SameSite = http.SameSiteLaxMode
 
+	// Очередь задач
+
+	queue := services.NewTaskQueue(pool)
+	worker := services.NewWorker(queue)
+
+	// передаем очередь в сервис, чтобы хендлеры могли кидать задачи
+
+	svc.SetQueue(queue)
+	// запуск фонового воркера
+
+	workerCtx, workerCancel := context.WithCancel(context.Background())
+	go worker.Run(workerCtx)
+
 	h := handlers.NewHandler(svc, session, jwtSecret)
 	// здесь в middleware кладем роутер
 	handlerChain := session.LoadAndSave(h.Router())
@@ -85,6 +98,9 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 	log.Println("Получен сигнал остановки. Включается Graceful Shutdown")
+
+	workerCancel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {

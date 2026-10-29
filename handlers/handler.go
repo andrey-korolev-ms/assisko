@@ -34,12 +34,17 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid bad request", http.StatusBadRequest)
 		return
 	}
-	if err := h.service.RegisterUser(ctx, req.Username, req.Password); err != nil {
-		http.Error(w, "faild to register user", http.StatusInternalServerError)
+	userID, err := h.service.RegisterUser(ctx, req.Username, req.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"status": "registered"})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user_id": userID,
+		"message": "Пользователь создан, письмо отправляется",
+	})
 }
 
 func (h *Handler) ProtectedDataHandler(w http.ResponseWriter, r *http.Request) {

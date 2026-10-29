@@ -15,8 +15,9 @@ type Storage interface {
 	SimpleSaveAtDB(ctx context.Context, human models.Human) error
 	GetByID(ctx context.Context, id int) (models.Human, error)
 	GetAll(ctx context.Context) ([]models.Human, error)
+
 	// методы для пользователей
-	CreateUser(ctx context.Context, username, password string) error
+	CreateUser(ctx context.Context, username, password string) (int, error)
 	GetUserByUsername(ctx context.Context, username string) (models.User, error)
 }
 type PostgresStore struct {
@@ -68,13 +69,13 @@ func (s *PostgresStore) GetAll(ctx context.Context) ([]models.Human, error) {
 	return result, rows.Err()
 }
 
-func (s *PostgresStore) CreateUser(ctx context.Context, username, password string) error {
+func (s *PostgresStore) CreateUser(ctx context.Context, username, password string) (int, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	_, err = s.pool.Exec(ctx, "INSERT INTO users (username, password_hash) values ($1, $2)", username, hashedPassword)
-	return err
+	return 0, err
 }
 func (s *PostgresStore) GetUserByUsername(ctx context.Context, username string) (models.User, error) {
 	var user models.User
