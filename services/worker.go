@@ -47,7 +47,7 @@ func (w *Worker) process(task *Task) {
 }
 func (w *Worker) handleWelcomeEmail(task *Task) {
 	var payload struct {
-		UserID int64  `json:"userid"`
+		UserID int    `json:"user_id"`
 		Email  string `json:"email"`
 	}
 	if err := json.Unmarshal(task.Payload, &payload); err != nil {
@@ -55,6 +55,6 @@ func (w *Worker) handleWelcomeEmail(task *Task) {
 		return
 	}
 	log.Printf("Отправка сообщения на %s (user_id=%d)", payload.Email, payload.UserID)
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(15 * time.Second)
 	log.Printf("Сообщение для пользователя %d отправлено", payload.UserID)
 }

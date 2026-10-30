@@ -74,8 +74,9 @@ func (s *PostgresStore) CreateUser(ctx context.Context, username, password strin
 	if err != nil {
 		return 0, err
 	}
-	_, err = s.pool.Exec(ctx, "INSERT INTO users (username, password_hash) values ($1, $2)", username, hashedPassword)
-	return 0, err
+	var userID int
+	err = s.pool.QueryRow(ctx, "INSERT INTO users (username, password_hash) values ($1, $2) RETURNING id", username, hashedPassword).Scan(&userID)
+	return userID, err
 }
 func (s *PostgresStore) GetUserByUsername(ctx context.Context, username string) (models.User, error) {
 	var user models.User
