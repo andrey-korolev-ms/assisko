@@ -58,9 +58,19 @@ func (s *Service) AuthenticateUser(ctx context.Context, username, password strin
 	return user, err
 }
 
-func (s *Service) SaveData(ctx context.Context, data models.Human) error {
+func (s *Service) SaveData(ctx context.Context, human models.Human) (models.Right, error) {
 	//допишу валидацию и логику позднее
-	return s.store.SimpleSaveAtDB(ctx, data)
+	human = models.Human{Sex: human.Sex, Age: human.Age}
+
+	id, err := s.store.SimpleSaveAtDB(ctx, human)
+	if err != nil {
+		return models.Right{}, err
+	}
+	return models.Right{
+		Status: true,
+		ID:     id,
+		Data:   human,
+	}, nil
 }
 
 func (s *Service) GetData(ctx context.Context, id int) (models.Human, error) {

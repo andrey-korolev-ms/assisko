@@ -7,12 +7,13 @@ import (
 	"errors"
 
 	// _ "github.com/lib/pq"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Storage interface {
-	SimpleSaveAtDB(ctx context.Context, human models.Human) error
+	SimpleSaveAtDB(ctx context.Context, human models.Human) (int, error)
 	GetByID(ctx context.Context, id int) (models.Human, error)
 	GetAll(ctx context.Context) ([]models.Human, error)
 
@@ -35,10 +36,11 @@ func NewPostgresStore(ctx context.Context, conn string) (*PostgresStore, error) 
 	return &PostgresStore{pool: db}, nil
 }
 
-func (s *PostgresStore) SimpleSaveAtDB(ctx context.Context, human models.Human) error {
-	_, err := s.pool.Exec(ctx, "INSERT INTO assisko (sex, age, ipk, simpleemployment, isinvalid, invalidgroup, operatorid) values ($1, $2, $3, $4, $5, $6, $7)", human.Sex, human.Age, human.IPK, human.SimpleEmployment, human.IsInvalid, human.InvalidGroup, human.OperatorID)
+func (s *PostgresStore) SimpleSaveAtDB(ctx context.Context, human models.Human) (int, error) {
+	var humanID int
+	err := s.pool.QueryRow(ctx, "INSERT INTO assisko (sex, age, ipk, simpleemployment, isinvalid, invalidgroup, operatorid) values ($1, $2, $3, $4, $5, $6, $7) RETURNING id", human.Sex, human.Age, human.IPK, human.SimpleEmployment, human.IsInvalid, human.InvalidGroup, human.OperatorID).Scan(&humanID)
 
-	return err
+	return humanID, err
 }
 
 func (s *PostgresStore) GetByID(ctx context.Context, id int) (models.Human, error) {

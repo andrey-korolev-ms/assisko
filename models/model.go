@@ -9,6 +9,11 @@ type Human struct {
 	InvalidGroup     int     `json:"invalidgroup"`
 	OperatorID       int     `json:"operatorid"`
 }
+type Right struct {
+	Status bool  `json:"status"`
+	ID     int   `json:"id"`
+	Data   Human `json:"data"`
+}
 
 // type SimpleEmployment struct {
 // 	Years     int `json:"years"`
