@@ -60,7 +60,7 @@ func (s *Service) AuthenticateUser(ctx context.Context, username, password strin
 
 func (s *Service) SaveData(ctx context.Context, human models.Human) (models.Right, error) {
 	//допишу валидацию и логику позднее
-	human = models.Human{Sex: human.Sex, Age: human.Age}
+	human = models.Human{Sex: "Мой пол_" + human.Sex, Age: human.Age + 1}
 
 	id, err := s.store.SimpleSaveAtDB(ctx, human)
 	if err != nil {
