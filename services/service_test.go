@@ -4,7 +4,10 @@ import (
 	"assisko/models"
 	"context"
 	"errors"
+	"reflect"
 	"testing"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type mockStore struct {
@@ -17,6 +20,10 @@ type mockStore struct {
 	getHuman models.Human // заготовка: что вернет мок
 	getErr   error        // заготовка: какую ошибку вернет мок
 	getIDArg int          // запомнили, какой ID запросили у мока
+
+	getUser        models.User
+	getUserErr     error
+	getUsernameArg string
 }
 
 func (m *mockStore) SimpleSaveAtDB(ctx context.Context, p models.Human) (int, error) {
@@ -35,7 +42,8 @@ func (m *mockStore) CreateUser(ctx context.Context, username, password string) (
 	return 0, nil
 }
 func (m *mockStore) GetUserByUsername(ctx context.Context, username string) (models.User, error) {
-	return models.User{}, nil
+	m.getUsernameArg = username
+	return m.getUser, m.getUserErr
 }
 
 func TestSaveData(t *testing.T) {
@@ -168,6 +176,81 @@ func TestGetData(t *testing.T) {
 			}
 			if ms.getIDArg != tt.inputID {
 				t.Errorf("в стор ушел id = %d, ожидалось %d", ms.getIDArg, tt.inputID)
+			}
+		})
+	}
+}
+func TestAuthenticateUser(t *testing.T) {
+	//генеринуем валидный хеш ДО таблицы тестов
+	//используем MinCost для скорости тестов (в проде DefaultCost)
+	correctPassword := "correct_password"
+	hash, err := bcrypt.GenerateFromPassword([]byte(correctPassword), bcrypt.MinCost)
+	if err != nil {
+		t.Fatalf("не удалось получить хеш: %v", err)
+	}
+	tests := []struct {
+		name     string
+		username string
+		password string
+		mockUser models.User
+		mockErr  error
+		wantErr  bool
+		wantUser models.User
+		errMsg   string
+	}{{
+		name:     "успешная аутентификация",
+		username: "Admin",
+		password: correctPassword,
+		mockUser: models.User{ID: 1, Username: "Admin", PasswordHash: hash},
+		mockErr:  nil,
+		wantErr:  false,
+		wantUser: models.User{ID: 1, Username: "Admin", PasswordHash: hash},
+	}, {
+		name:     "пользователь не найден",
+		username: "nonexistuserx",
+		password: "any_password",
+		mockUser: models.User{},
+		mockErr:  errors.New("Пользователь не найден"),
+		wantErr:  true,
+		wantUser: models.User{},
+	}, {
+		name:     "неверный пароль",
+		username: "Admin",
+		password: "wrong_password",
+		mockUser: models.User{ID: 1, Username: "Admin", PasswordHash: hash},
+		mockErr:  nil,
+		wantErr:  true,
+		wantUser: models.User{},
+		errMsg:   "неверный пароль",
+	},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ms := &mockStore{
+				getUser:    tt.mockUser,
+				getUserErr: tt.mockErr,
+			}
+			svc := NewService(ms)
+
+			result, err := svc.AuthenticateUser(context.Background(), tt.username, tt.password)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AuthenticateUser() error = %v, want = %v", err, tt.wantErr)
+			}
+			if !tt.wantErr {
+				if !reflect.DeepEqual(result, tt.wantUser) {
+					t.Errorf("AuthenticateUser() = %+v, want %+v", result, tt.wantUser)
+				}
+			}
+			if tt.errMsg != "" {
+				if err == nil {
+					t.Fatalf("ожидалась ошибка %q, но ее нет", tt.errMsg)
+				}
+				if err.Error() != tt.errMsg {
+					t.Errorf("ожидалась ошибка %q, ожидалось %q", err.Error(), tt.errMsg)
+				}
+			}
+			if ms.getUsernameArg != tt.username {
+				t.Errorf("в стор ушел username %v, а ожидалось %v", ms.getUsernameArg, tt.username)
 			}
 		})
 	}
