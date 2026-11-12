@@ -5,25 +5,31 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type mockStore struct {
+	// поля для SimpleSaveAtDB
 	saveErr    error
 	saveID     int
 	savedHuman models.Human
 	saveCalled bool
 
-	//поля для чтения
+	//поля для чтения GetByID
 	getHuman models.Human // заготовка: что вернет мок
 	getErr   error        // заготовка: какую ошибку вернет мок
 	getIDArg int          // запомнили, какой ID запросили у мока
-
+	// поля для GetUserByUsername
 	getUser        models.User
 	getUserErr     error
 	getUsernameArg string
+	// для GetAll(){}
+	getAllHumans []models.Human
+	getAllErr    error
+	getAllCalled bool
 }
 
 func (m *mockStore) SimpleSaveAtDB(ctx context.Context, p models.Human) (int, error) {
@@ -36,7 +42,8 @@ func (m *mockStore) GetByID(ctx context.Context, id int) (models.Human, error) {
 	return m.getHuman, m.getErr
 }
 func (m *mockStore) GetAll(ctx context.Context) ([]models.Human, error) {
-	return []models.Human{}, nil
+	m.getAllCalled = true
+	return m.getAllHumans, m.getAllErr
 }
 func (m *mockStore) CreateUser(ctx context.Context, username, password string) (int, error) {
 	return 0, nil
@@ -251,6 +258,61 @@ func TestAuthenticateUser(t *testing.T) {
 			}
 			if ms.getUsernameArg != tt.username {
 				t.Errorf("в стор ушел username %v, а ожидалось %v", ms.getUsernameArg, tt.username)
+			}
+		})
+	}
+}
+func TestGetAll(t *testing.T) {
+	tests := []struct {
+		name       string
+		mockHumans []models.Human
+		mockErr    error
+		wantErr    bool
+		wantHumans []models.Human
+	}{{
+		name: "получение нескольких записей",
+		mockHumans: []models.Human{
+			{Sex: "male", Age: 34, OperatorID: 9},
+			{Sex: "female", Age: 35, OperatorID: 9},
+		},
+		mockErr: nil,
+		wantErr: false,
+		wantHumans: []models.Human{
+			{Sex: "male", Age: 34, OperatorID: 9},
+			{Sex: "female", Age: 35, OperatorID: 9},
+		},
+	}, {
+		name: "одна запись",
+		mockHumans: []models.Human{
+			{Sex: "male", Age: 43, OperatorID: 10},
+		},
+		mockErr: nil,
+		wantErr: false,
+		wantHumans: []models.Human{
+			{Sex: "male", Age: 43, OperatorID: 10},
+		},
+	}, {
+		name:       "Ошибка базы пробрасывания",
+		mockHumans: nil,
+		mockErr:    errors.New("база не доступна"),
+		wantErr:    true,
+		wantHumans: nil,
+	},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ms := &mockStore{
+				getAllHumans: tt.mockHumans,
+				getAllErr:    tt.mockErr,
+			}
+			svc := NewService(ms)
+			result, err := svc.GetAll(context.Background())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("store.GetAll() err = %v, wantErr = %v", err, tt.wantErr)
+			}
+			//слайсы сравнимаем через slices.Equal
+			if !slices.Equal(result, tt.wantHumans) {
+				t.Errorf("GetAll = %+v, want %+v", result, tt.wantHumans)
 			}
 		})
 	}

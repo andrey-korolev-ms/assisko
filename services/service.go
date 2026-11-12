@@ -77,6 +77,10 @@ func (s *Service) GetData(ctx context.Context, id int) (models.Human, error) {
 	return s.store.GetByID(ctx, id)
 }
 
+func (s *Service) GetAll(ctx context.Context) ([]models.Human, error) {
+	return s.store.GetAll(ctx)
+}
+
 func (s *Service) SetQueue(q *TaskQueue) {
 	s.queue = q
 }
